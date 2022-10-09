@@ -29,12 +29,14 @@ var (
 
 	rootParams = []param{
 		{name: "bind-addr", shorthand: "", value: "0.0.0.0:8080", usage: "listen address"},
+		{name: "bg-color", shorthand: "", value: "white", usage: "page background"},
+		{name: "title", shorthand: "", value: "Cnvrg SSO Central", usage: "page title"},
 	}
 	rootCmd = &cobra.Command{
 		Use:   "centralsso",
 		Short: "centralsso - cnvrg central sso test app ",
 		Run: func(cmd *cobra.Command, args []string) {
-			srv.Run(viper.GetString("bind-addr"))
+			srv.Run(viper.GetString("bind-addr"), viper.GetString("bg-color"), viper.GetString("title"))
 			// handle interrupts
 			sigCh := make(chan os.Signal, 1)
 			signal.Notify(sigCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)

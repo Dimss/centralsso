@@ -11,9 +11,18 @@ import (
 	"time"
 )
 
-var upgrader = websocket.Upgrader{}
+var (
+	upgrader = websocket.Upgrader{}
+	bg       = ""
+	title    = ""
+)
 
-func Run(addr string) {
+func Run(addr, bgColor, t string) {
+
+	bg = bgColor
+
+	title = t
+
 	r := gin.Default()
 
 	r.StaticFS("/public", mustFS())
@@ -32,7 +41,8 @@ func Run(addr string) {
 }
 
 func indexHandler(c *gin.Context) {
-	c.Data(http.StatusOK, "text/html", ui.NewIndex(c.Request.Header).Parse())
+	c.Header("Authorization", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJrMzJJQnkxb1lJZDVZcVdySVdGeWprMlVIVHhPbjRicC1CRFRCN3RrTEJFIn0.eyJleHAiOjE2NjUzMTQ4NDEsImlhdCI6MTY2NTMxNDU0MSwiYXV0aF90aW1lIjoxNjY1MzE0NTQxLCJqdGkiOiI4YWMzYzM4MC1jYWIyLTQ5NGEtOWE5OC0wZDgyOTY5OWIxNTEiLCJpc3MiOiJodHRwczovL2lkZW50aXR5LmRldi1jbG91ZC5jbnZyZy5pby9hdXRoL3JlYWxtcy9kaW1hLWxvYWQtdGVzdCIsImF1ZCI6Im15LXJlbGFtLTEiLCJzdWIiOiI2Nzk3YTg2My1kZmVhLTRlNjMtOWJlNy1mOTg3N2Q0YWYzZDAiLCJ0eXAiOiJJRCIsImF6cCI6Im15LXJlbGFtLTEiLCJzZXNzaW9uX3N0YXRlIjoiOWZkNjQ4NTEtYjExOS00MDA0LTljMmQtMjNjZTE4MDdhMDdhIiwiYXRfaGFzaCI6Im9oTVJYQndLZnltZkE4ZnpKZUYta3ciLCJhY3IiOiIxIiwic2lkIjoiOWZkNjQ4NTEtYjExOS00MDA0LTljMmQtMjNjZTE4MDdhMDdhIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJncm91cHMiOlsiL2Frcy1jaWNkLTExNTg5IiwiL2dyb3VwLTEiLCJvZmZsaW5lX2FjY2VzcyIsImRlZmF1bHQtcm9sZXMtZGltYS1sb2FkLXRlc3QiLCJ1bWFfYXV0aG9yaXphdGlvbiJdLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJkaW1hQGNudnJnLmlvIiwiZW1haWwiOiJkaW1hQGNudnJnLmlvIn0.KOlm9fq-eIYviQSfM8bRcVDegycsegLJixGf70KjowWYKZbwOBV_BzKbS-HcIpFjQusHJy9twadl_FSTx-URASZDHwM3UmbEbD73NtfSmSf8jdtxiXJe-qE7sgeGXE60e86V6ZulevATQL9dz5d_6O5yHEaGLSYvk90yseiCDXRV4oxCk1oEANHXjJYO-QK2ej-nPsDJpCMfuGmje5t0dd10-KAKFGzoQF_1iUqhE1qkKVYO1jKxh3cYXA7qfFoOP1E6ZuMIBu78wZp3TXOlnJFRepJdPfRMuC2PbrgPVOuuA-qeNoIFB0htDAYNC0UtymDQQJ3BLhiyAGioN1_X4w\n")
+	c.Data(http.StatusOK, "text/html", ui.NewIndex(title, bg, c.Request.Header).Parse())
 }
 
 func defaultIndexRedirectHandler(c *gin.Context) {
@@ -40,7 +50,7 @@ func defaultIndexRedirectHandler(c *gin.Context) {
 }
 
 func apiHandler(c *gin.Context) {
-	c.Header("X-CustomTestHeader", "Foo-Bar")
+	c.Header("X-CustomTestHeader", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJrMzJJQnkxb1lJZDVZcVdySVdGeWprMlVIVHhPbjRicC1CRFRCN3RrTEJFIn0.eyJleHAiOjE2NjUzMTQ4NDEsImlhdCI6MTY2NTMxNDU0MSwiYXV0aF90aW1lIjoxNjY1MzE0NTQxLCJqdGkiOiI4YWMzYzM4MC1jYWIyLTQ5NGEtOWE5OC0wZDgyOTY5OWIxNTEiLCJpc3MiOiJodHRwczovL2lkZW50aXR5LmRldi1jbG91ZC5jbnZyZy5pby9hdXRoL3JlYWxtcy9kaW1hLWxvYWQtdGVzdCIsImF1ZCI6Im15LXJlbGFtLTEiLCJzdWIiOiI2Nzk3YTg2My1kZmVhLTRlNjMtOWJlNy1mOTg3N2Q0YWYzZDAiLCJ0eXAiOiJJRCIsImF6cCI6Im15LXJlbGFtLTEiLCJzZXNzaW9uX3N0YXRlIjoiOWZkNjQ4NTEtYjExOS00MDA0LTljMmQtMjNjZTE4MDdhMDdhIiwiYXRfaGFzaCI6Im9oTVJYQndLZnltZkE4ZnpKZUYta3ciLCJhY3IiOiIxIiwic2lkIjoiOWZkNjQ4NTEtYjExOS00MDA0LTljMmQtMjNjZTE4MDdhMDdhIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJncm91cHMiOlsiL2Frcy1jaWNkLTExNTg5IiwiL2dyb3VwLTEiLCJvZmZsaW5lX2FjY2VzcyIsImRlZmF1bHQtcm9sZXMtZGltYS1sb2FkLXRlc3QiLCJ1bWFfYXV0aG9yaXphdGlvbiJdLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJkaW1hQGNudnJnLmlvIiwiZW1haWwiOiJkaW1hQGNudnJnLmlvIn0.KOlm9fq-eIYviQSfM8bRcVDegycsegLJixGf70KjowWYKZbwOBV_BzKbS-HcIpFjQusHJy9twadl_FSTx-URASZDHwM3UmbEbD73NtfSmSf8jdtxiXJe-qE7sgeGXE60e86V6ZulevATQL9dz5d_6O5yHEaGLSYvk90yseiCDXRV4oxCk1oEANHXjJYO-QK2ej-nPsDJpCMfuGmje5t0dd10-KAKFGzoQF_1iUqhE1qkKVYO1jKxh3cYXA7qfFoOP1E6ZuMIBu78wZp3TXOlnJFRepJdPfRMuC2PbrgPVOuuA-qeNoIFB0htDAYNC0UtymDQQJ3BLhiyAGioN1_X4w\n")
 	c.JSON(http.StatusOK, gin.H{
 		c.Param("ping"): "pong",
 		"time":          time.Now().Format(time.UnixDate),

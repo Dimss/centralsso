@@ -11,7 +11,7 @@ COPY pkg/ pkg/
 
 RUN GOOS=linux GOARCH=amd64 \
     go build \
-    -o bin/centralsso main.go \
+    -o bin/centralsso main.go
 
 FROM ubuntu:22.04
 WORKDIR /opt/app-root

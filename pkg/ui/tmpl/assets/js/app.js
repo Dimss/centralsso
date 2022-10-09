@@ -34,7 +34,7 @@ $(document).ready(function () {
             jqXHR.getAllResponseHeaders().split("\n").forEach(header => {
                 let kv = header.split(":")
                 if (kv.length == 2) {
-                    body.push('<tr><td class="col-2">' + kv[0] + '</td><td>' + kv[1] + '</td></tr>')
+                    body.push('<tr class="row"><td class="col-2">' + kv[0] + '</td><td class="col-10"><small class="text-break text-muted">' + kv[1] + '</small></td></tr>')
                 }
             })
             $("#ajaxHeadersResult").append(body)
@@ -44,8 +44,3 @@ $(document).ready(function () {
 
 });
 
-
-function createWebSocket() {
-
-    return
-}

@@ -16,12 +16,16 @@ var htmlIndex embed.FS
 
 type Index struct {
 	Name    string
+	Color   string
+	Title   string
 	Headers map[string][]string
 }
 
-func NewIndex(h map[string][]string) *Index {
+func NewIndex(title, color string, h map[string][]string) *Index {
 	return &Index{
 		Name:    "index.html",
+		Color:   color,
+		Title:   title,
 		Headers: h,
 	}
 }
