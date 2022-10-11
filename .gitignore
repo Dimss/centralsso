@@ -1,4 +1,4 @@
 .idea
 bin
 manifests
-privkey
+config/private-key

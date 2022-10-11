@@ -31,7 +31,7 @@ var (
 		{name: "bind-addr", shorthand: "", value: "0.0.0.0:8080", usage: "listen address"},
 		{name: "bg-color", shorthand: "", value: "white", usage: "page background"},
 		{name: "title", shorthand: "", value: "Cnvrg SSO Central", usage: "page title"},
-		{name: "sign-key", shorthand: "", value: "./private-key", usage: "path to private key for jwt sign"},
+		{name: "sign-key", shorthand: "", value: "./config/private-key", usage: "path to private key for jwt sign"},
 		{name: "domain-id", shorthand: "", value: "localhost", usage: "the domain id which will be used as a group"},
 	}
 	rootCmd = &cobra.Command{
