@@ -1,13 +1,17 @@
 package srv
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"github.com/AccessibleAI/centralsso/pkg/ui"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"io/fs"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -28,6 +32,8 @@ func Run(addr, bgColor, t string) {
 	r.StaticFS("/public", mustFS())
 
 	r.GET("/api/:ping", apiHandler)
+
+	r.GET("/jwt", generateJWT)
 
 	r.GET("/websocket", webSocketHandler)
 
@@ -53,6 +59,39 @@ func apiHandler(c *gin.Context) {
 		c.Param("ping"): "pong",
 		"time":          time.Now().Format(time.UnixDate),
 	})
+}
+
+func generateJWT(c *gin.Context) {
+	signKey, err := getPrivateKey()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	claims := jwt.MapClaims{
+		"sub":    "u.Email",
+		"exp":    time.Now().UTC().Add(time.Hour * 24).Unix(),
+		"iss":    "central-sso",
+		"groups": []string{viper.GetString("domain-id")},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	tokenStr, err := token.SignedString(signKey)
+	c.JSON(http.StatusOK, gin.H{
+		"Token": "Bearer " + tokenStr,
+	})
+
+}
+
+func getPrivateKey() (*rsa.PrivateKey, error) {
+	privateKey, err := os.ReadFile(viper.GetString("sign-key"))
+	if err != nil {
+		return nil, err
+	}
+	signKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	return signKey, nil
 }
 
 func webSocketHandler(c *gin.Context) {

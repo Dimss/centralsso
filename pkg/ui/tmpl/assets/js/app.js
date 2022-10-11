@@ -42,5 +42,13 @@ $(document).ready(function () {
         });
     })
 
+    $("#jwtBtn").on("click", () => {
+        $.getJSON("/jwt", (data) => {
+            let append = '<small class="text-break text-muted">' + JSON.stringify(data) + '</small>'
+            $("#jwtResult").append(append)
+
+        });
+    })
+
 });
 
