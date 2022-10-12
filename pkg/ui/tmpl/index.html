@@ -116,7 +116,7 @@
 
     </div>
 
-     <p style="font-size: 20px; font-weight: bold" class="text-primary text-center">jwt token test</p>
+    <p style="font-size: 20px; font-weight: bold" class="text-primary text-center">jwt token test</p>
 
     <div class="container">
 
@@ -142,6 +142,30 @@
 
     </div>
 
+    <p style="font-size: 20px; font-weight: bold" class="text-primary text-center">capi legacy token test</p>
+
+    <div class="container">
+
+        <div class="row">
+            <div id="capiResult" class="col-sm">
+                <small class="text-break text-muted">
+                     {
+                        "apiVersion": "v1",
+                        "kind": "Secret",
+                        "metadata": {
+                            "name": "cp-oauth-proxy-tokens-secret",
+                            "namespace": "cnvrg"
+                        },
+                        "data": {
+                            "OAUTH_PROXY_API_KEY": "{{ randAlphaNum 32 | lower | b64enc }}",
+                            "OAUTH_PROXY_API_AUTH_DATA": "{{ randAlphaNum 12 | lower | b64enc }}"
+                        }
+                    }
+                </small>
+            </div>
+        </div>
+
+    </div>
 
 
     <p style="font-size: 20px; font-weight: bold" class="text-primary text-center">iframe test</p>
