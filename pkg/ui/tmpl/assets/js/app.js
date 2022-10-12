@@ -44,7 +44,9 @@ $(document).ready(function () {
 
     $("#jwtBtn").on("click", () => {
         $.getJSON("/jwt", (data) => {
-            let append = '<small class="text-break text-muted">' + JSON.stringify(data) + '</small>'
+
+            let command = "curl -H 'Authorization: Bearer " + data.Token +"' "+ window.location.protocol + '//' + window.location.host + "/api/post"
+            let append = '<small class="text-break text-muted">' + command + '</small>'
             $("#jwtResult").append(append)
 
         });

@@ -33,6 +33,7 @@ var (
 		{name: "title", shorthand: "", value: "Cnvrg SSO Central", usage: "page title"},
 		{name: "sign-key", shorthand: "", value: "./config/private-key", usage: "path to private key for jwt sign"},
 		{name: "domain-id", shorthand: "", value: "localhost", usage: "the domain id which will be used as a group"},
+		{name: "jwt-iis", shorthand: "", value: "iis", usage: "the jwt iis"},
 	}
 	rootCmd = &cobra.Command{
 		Use:   "centralsso",

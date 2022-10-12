@@ -67,16 +67,18 @@ func generateJWT(c *gin.Context) {
 		log.Error(err)
 		return
 	}
+
 	claims := jwt.MapClaims{
-		"sub":    "u.Email",
+		"email":  c.Request.Header["X-Forwarded-Email"][0],
 		"exp":    time.Now().UTC().Add(time.Hour * 24).Unix(),
-		"iss":    "central-sso",
+		"iss":    viper.GetString("jwt-iis"),
+		"aud":    "cnvrg-tenant",
 		"groups": []string{viper.GetString("domain-id")},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	tokenStr, err := token.SignedString(signKey)
 	c.JSON(http.StatusOK, gin.H{
-		"Token": "Bearer " + tokenStr,
+		"Token": tokenStr,
 	})
 
 }
