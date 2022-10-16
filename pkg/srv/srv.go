@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -55,10 +56,16 @@ func defaultIndexRedirectHandler(c *gin.Context) {
 }
 
 func apiHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
+	jsonRep := gin.H{
 		c.Param("ping"): "pong",
 		"time":          time.Now().Format(time.UnixDate),
-	})
+	}
+
+	for k, v := range c.Request.Header {
+		jsonRep[k] = strings.Join(v, " ")
+	}
+
+	c.JSON(http.StatusOK, jsonRep)
 }
 
 func generateJWT(c *gin.Context) {
