@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -22,13 +23,23 @@ var (
 	title    = ""
 )
 
+const (
+	// JwksUrlEnvVar JWKS endpoint location environment variable
+	JwksUrlEnvVar = "CNVRG_CENTRAL_SSO_JWT_IIS"
+)
+
 func Run(addr, bgColor, t string) {
 
 	bg = bgColor
 
 	title = t
 
-	r := gin.Default()
+	r := gin.New()
+
+	r.Use(
+		gin.LoggerWithWriter(gin.DefaultWriter, "/ready"),
+		gin.Recovery(),
+	)
 
 	r.StaticFS("/public", mustFS())
 
@@ -37,6 +48,8 @@ func Run(addr, bgColor, t string) {
 	r.GET("/jwt", generateJWT)
 
 	r.GET("/websocket", webSocketHandler)
+
+	r.GET("/ready", readyHandler)
 
 	r.GET("/", defaultIndexRedirectHandler)
 
@@ -129,6 +142,42 @@ func webSocketHandler(c *gin.Context) {
 		}
 	}
 	defer ws.Close()
+}
+
+// readyHandler handler for k8s readiness endpoint
+func readyHandler(context *gin.Context) {
+	// env is set
+	jwksURL := os.Getenv(JwksUrlEnvVar)
+	if jwksURL == "" {
+		log.Errorf("%s environment variable is not set", JwksUrlEnvVar)
+		context.Writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// env is set to valid url
+	_, err := url.ParseRequestURI(jwksURL)
+	if err != nil {
+		log.Errorf("jwks url is not valid %s, %v", jwksURL, err)
+		context.Writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// jwks url is accessible
+	resp, err := http.Get(jwksURL)
+	if err != nil {
+		log.Error("unable to access JWKS url, error: ", err)
+		context.Writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// jwks returns with non error non error response
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		log.Error("JWKS endpoint returns status ", resp.StatusCode)
+		context.Writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	context.Writer.WriteHeader(http.StatusOK)
 }
 
 func mustFS() http.FileSystem {
