@@ -42,6 +42,8 @@ func Run(addr, bgColor, t string) {
 
 	r.GET("/index.html", indexHandler)
 
+	r.GET("/ready", readyHandler)
+
 	if err := r.Run(addr); err != nil {
 		log.Fatal(err)
 	}
@@ -49,6 +51,10 @@ func Run(addr, bgColor, t string) {
 
 func indexHandler(c *gin.Context) {
 	c.Data(http.StatusOK, "text/html", ui.NewIndex(title, bg, c.Request.Header).Parse())
+}
+
+func readyHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 func defaultIndexRedirectHandler(c *gin.Context) {
