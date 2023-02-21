@@ -214,9 +214,11 @@ func oauth2Callback2(c *gin.Context) {
 
 	redirectUrl.URL.RawQuery = q.Encode()
 
-	c.Redirect(http.StatusFound, redirectUrl.URL.String())
-
-	//c.JSON(http.StatusOK, responseData)
+	if rd != "" {
+		c.Redirect(http.StatusFound, redirectUrl.URL.String())
+	} else {
+		c.JSON(http.StatusOK, responseData)
+	}
 
 }
 
