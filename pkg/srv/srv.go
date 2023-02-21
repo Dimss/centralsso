@@ -231,7 +231,7 @@ func oauth2Callback(c *gin.Context) {
 	params.Add("grant_type", "authorization_code")
 	params.Add("client_id", "ed598141-b6e6-4a23-a135-4d5cdf1de980")
 	params.Add("scope", scope)
-	params.Add("redirect_uri", "http://localhost:8080/oauth2/callback")
+	params.Add("redirect_uri", viper.GetString("redirect-uri"))
 	params.Add("code", code)
 	params.Add("client_secret", "mLg8Q~BH_uGOW7S_CBt2qFxlbcjFgsG0Ue3jyaMI")
 	//params.Add("code_verifier", CodeVerifier.String())
