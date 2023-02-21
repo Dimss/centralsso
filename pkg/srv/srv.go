@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"crypto/sha1"
+	"crypto/tls"
 	"crypto/x509"
 	b64 "encoding/base64"
 	"encoding/json"
@@ -178,10 +179,12 @@ func oauth2Callback2(c *gin.Context) {
 
 	payload := strings.NewReader(params.Encode())
 
+	client := http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+
 	req, _ := http.NewRequest("POST", ep, payload)
 
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
-	res, err := http.DefaultClient.Do(req)
+	res, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("snap: HTTP error: %s", err)
 		return
