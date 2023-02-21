@@ -1,6 +1,7 @@
 package srv
 
 import (
+	"context"
 	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/x509"
@@ -9,10 +10,14 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/AccessibleAI/centralsso/pkg/ui"
+
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
+
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/websocket"
 	cv "github.com/nirasan/go-oauth-pkce-code-verifier"
+
+	"github.com/MicahParks/keyfunc"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"io"
@@ -43,9 +48,7 @@ func Run(addr, bgColor, t string) {
 
 	r.StaticFS("/public", mustFS())
 
-	r.GET("/api/:ping", apiHandler)
-
-	r.GET("/jwt", generateJWT)
+	r.GET("/verify", verify)
 
 	r.GET("/websocket", webSocketHandler)
 
@@ -55,15 +58,66 @@ func Run(addr, bgColor, t string) {
 
 	r.GET("/ready", readyHandler)
 
-	r.GET("/start", oauth2StartHandler)
+	r.GET("/auth", oauth2StartHandler)
 
 	r.GET("/client-creds", clientCreds)
 
-	r.GET("/oauth2/callback", oauth2Callback)
+	r.GET("/oauth2/callback", oauth2Callback2)
 
 	if err := r.Run(addr); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func verify(c *gin.Context) {
+	jwksURL := "https://mvpcnvrg.b2clogin.com/mvpcnvrg.onmicrosoft.com/b2c_1_test1/discovery/v2.0/keys"
+
+	// Create a context that, when cancelled, ends the JWKS background refresh goroutine.
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Create the keyfunc options. Use an error handler that logs. Refresh the JWKS when a JWT signed by an unknown KID
+	// is found or at the specified interval. Rate limit these refreshes. Timeout the initial JWKS refresh request after
+	// 10 seconds. This timeout is also used to create the initial context.Context for keyfunc.Get.
+	options := keyfunc.Options{
+		Ctx: ctx,
+		RefreshErrorHandler: func(err error) {
+			log.Printf("There was an error with the jwt.Keyfunc\nError: %s", err.Error())
+		},
+		RefreshInterval:   time.Hour,
+		RefreshRateLimit:  time.Minute * 5,
+		RefreshTimeout:    time.Second * 10,
+		RefreshUnknownKID: true,
+	}
+
+	// Create the JWKS from the resource at the given URL.
+	jwks, err := keyfunc.Get(jwksURL, options)
+	if err != nil {
+		log.Fatalf("Failed to create JWKS from resource at the given URL.\nError: %s", err.Error())
+	}
+
+	// Get a JWT to parse.
+	jwtB64 := "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ilg1ZVhrNHh5b2pORnVtMWtsMll0djhkbE5QNC1jNTdkTzZRR1RWQndhTmsifQ.eyJpc3MiOiJodHRwczovL212cGNudnJnLmIyY2xvZ2luLmNvbS85MWZkNzFiMy0zZDhhLTQ5MzQtYmEzYi1lMGUwYWJmNWM1MDkvdjIuMC8iLCJleHAiOjE2NzY4OTkwOTEsIm5iZiI6MTY3Njg5NTQ5MSwiYXVkIjoiZWQ1OTgxNDEtYjZlNi00YTIzLWExMzUtNGQ1Y2RmMWRlOTgwIiwib2lkIjoiMjE2MTI3ZDAtM2VhYS00ZTcwLWE0NWEtMGYzNjFjZmViNTczIiwic3ViIjoiMjE2MTI3ZDAtM2VhYS00ZTcwLWE0NWEtMGYzNjFjZmViNTczIiwiZW1haWxzIjpbImRpbXNzc3NAZ21haWwuY29tIl0sInRmcCI6IkIyQ18xX3Rlc3QxIiwiYXpwIjoiZWQ1OTgxNDEtYjZlNi00YTIzLWExMzUtNGQ1Y2RmMWRlOTgwIiwidmVyIjoiMS4wIiwiaWF0IjoxNjc2ODk1NDkxfQ.Iu-M8b7c-4eozMSx4BQdcH95QHRd9h-fYLUsQBalW-5uG8CvCW3MVmg5xs-QhbUXKU5rz7g4_qgEEpuJkbTyUsjTzAsBNINd8I2y1NHHpkf6nx-zVk2TZbew66riWSiKPWKCK8ox0bLfe-OA358kucVsi4qEDQ_0f5dtrlpNKp9_6BYfYnzxTkOfCJ7rpThNt4vJBv_dLNZTdyEp_2jF3emojMk8-eO1_V7vvr-HQAH4YLDbYaLspd0f1S801GsnqD1XBFZ7InVld0Ccn2Wb3XWs3rPkN2ncqsU62_M5y2JGlR65u3oZi-MTw51TkRBUkAvPdEB6pDhtgnaUIIx8CA"
+
+	// Parse the JWT.
+	token, err := jwt.Parse(jwtB64, jwks.Keyfunc)
+	if err != nil {
+		log.Fatalf("Failed to parse the JWT.\nError: %s", err.Error())
+	}
+
+	// Check if the token is valid.
+	if !token.Valid {
+		log.Fatalf("The token is not valid.")
+	}
+	log.Println("The token is valid.")
+
+	// End the background refresh goroutine when it's no longer needed.
+	cancel()
+
+	// This will be ineffectual because the line above this canceled the parent context.Context.
+	// This method call is idempotent similar to context.CancelFunc.
+	jwks.EndBackground()
+
+	log.Info(token.Claims)
 }
 
 func clientCreds(c *gin.Context) {
@@ -103,24 +157,23 @@ func clientCreds(c *gin.Context) {
 
 }
 
-func oauth2Callback(c *gin.Context) {
+func oauth2Callback2(c *gin.Context) {
 	code := c.Query("code")
-	idToken := c.Query("id_token")
-	log.Info(code)
-	log.Info(idToken)
+	rd := c.Query("state")
+	log.Info(rd)
 	ep := "https://mvpcnvrg.b2clogin.com/mvpcnvrg.onmicrosoft.com/b2c_1_test1/oauth2/v2.0/token"
 
 	//scope := "https://mvpcnvrg.onmicrosoft.com/9134f43c-ea00-4a4e-b915-6bcc79483bd7/read openid offline_access email"
-	scope := "7f98a8ec-0e21-44d2-ae27-af0c22a1bba4 openid offline_access email"
+	scope := "ed598141-b6e6-4a23-a135-4d5cdf1de980 openid offline_access email"
 
 	params := url.Values{}
 
 	params.Add("grant_type", "authorization_code")
-	params.Add("client_id", "7f98a8ec-0e21-44d2-ae27-af0c22a1bba4")
+	params.Add("client_id", "ed598141-b6e6-4a23-a135-4d5cdf1de980")
 	params.Add("scope", scope)
-	params.Add("redirect_uri", "http://localhost:8080/oauth2/callback")
+	params.Add("redirect_uri", viper.GetString("redirect-uri"))
 	params.Add("code", code)
-	params.Add("client_secret", "PA48Q~d2ttb5CspEifK53F3GmE0aZOd1t7vyQaK4")
+	params.Add("client_secret", "mLg8Q~BH_uGOW7S_CBt2qFxlbcjFgsG0Ue3jyaMI")
 	//params.Add("code_verifier", CodeVerifier.String())
 
 	payload := strings.NewReader(params.Encode())
@@ -134,7 +187,7 @@ func oauth2Callback(c *gin.Context) {
 		return
 	}
 
-	// process the response``
+	// process the response
 	defer res.Body.Close()
 	var responseData map[string]interface{}
 	body, _ := io.ReadAll(res.Body)
@@ -146,34 +199,88 @@ func oauth2Callback(c *gin.Context) {
 		return
 	}
 
+	q := req.URL.Query()
+	q.Add("t", responseData["access_token"].(string))
+
+	redirectUrl, err := http.NewRequest("GET", rd, nil)
+
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	redirectUrl.URL.RawQuery = q.Encode()
+
+	c.Redirect(http.StatusFound, redirectUrl.URL.String())
+
+	//c.JSON(http.StatusOK, responseData)
+
+}
+
+func oauth2Callback(c *gin.Context) {
+	code := c.Query("code")
+	rd := c.Query("state")
+	log.Info(rd)
+	ep := "https://mvpcnvrg.b2clogin.com/mvpcnvrg.onmicrosoft.com/b2c_1_test1/oauth2/v2.0/token"
+
+	//scope := "https://mvpcnvrg.onmicrosoft.com/9134f43c-ea00-4a4e-b915-6bcc79483bd7/read openid offline_access email"
+	scope := "ed598141-b6e6-4a23-a135-4d5cdf1de980 openid offline_access email"
+
+	params := url.Values{}
+
+	params.Add("grant_type", "authorization_code")
+	params.Add("client_id", "ed598141-b6e6-4a23-a135-4d5cdf1de980")
+	params.Add("scope", scope)
+	params.Add("redirect_uri", "http://localhost:8080/oauth2/callback")
+	params.Add("code", code)
+	params.Add("client_secret", "mLg8Q~BH_uGOW7S_CBt2qFxlbcjFgsG0Ue3jyaMI")
+	//params.Add("code_verifier", CodeVerifier.String())
+
+	payload := strings.NewReader(params.Encode())
+
+	req, _ := http.NewRequest("POST", ep, payload)
+
+	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Printf("snap: HTTP error: %s", err)
+		return
+	}
+
+	// process the response
+	defer res.Body.Close()
+	var responseData map[string]interface{}
+	body, _ := io.ReadAll(res.Body)
+
+	// unmarshal the json into a string map
+	err = json.Unmarshal(body, &responseData)
+	if err != nil {
+		fmt.Printf("snap: JSON error: %s", err)
+		return
+	}
+	c.SetCookie("token", "asdasd", 3600, "/", ".test", false, false)
 	c.JSON(http.StatusOK, responseData)
 
 }
 
 func oauth2StartHandler(c *gin.Context) {
+	rd := c.Query("rd")
 	authorizeEndpoint := "https://mvpcnvrg.b2clogin.com/mvpcnvrg.onmicrosoft.com/b2c_1_test1/oauth2/v2.0/authorize"
 	req, err := http.NewRequest("GET", authorizeEndpoint, nil)
 	if err != nil {
 		log.Print(err)
 		return
 	}
-
-	// Create code_challenge with S256 method
-	//codeChallenge := CodeVerifier.CodeChallengeS256()
-
 	//scope := "https://mvpcnvrg.onmicrosoft.com/9134f43c-ea00-4a4e-b915-6bcc79483bd7/read openid offline_access email"
-
-	scope := "7f98a8ec-0e21-44d2-ae27-af0c22a1bba4 openid offline_access email"
+	scope := "ed598141-b6e6-4a23-a135-4d5cdf1de980 openid offline_access email"
 
 	q := req.URL.Query()
-	q.Add("client_id", "7f98a8ec-0e21-44d2-ae27-af0c22a1bba4")
 	q.Add("response_type", "code")
-	q.Add("redirect_uri", "http://localhost:8080/oauth2/callback")
+	q.Add("client_id", "ed598141-b6e6-4a23-a135-4d5cdf1de980")
+	q.Add("redirect_uri", viper.GetString("redirect-uri"))
 	q.Add("response_mode", "query")
 	q.Add("scope", scope)
-	q.Add("state", "12345")
-	//q.Add("code_challenge", codeChallenge)
-	//q.Add("code_challenge_method", "S256")
+	q.Add("state", rd)
 	req.URL.RawQuery = q.Encode()
 
 	c.Redirect(http.StatusFound, req.URL.String())

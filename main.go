@@ -34,6 +34,7 @@ var (
 		{name: "sign-key", shorthand: "", value: "./config/private-key", usage: "path to private key for jwt sign"},
 		{name: "domain-id", shorthand: "", value: "localhost", usage: "the domain id which will be used as a group"},
 		{name: "jwt-iis", shorthand: "", value: "iis", usage: "the jwt iis"},
+		{name: "redirect-uri", shorthand: "", value: "http://localhost:8080/oauth2/callback", usage: "oauth2 redirect uri"},
 	}
 	rootCmd = &cobra.Command{
 		Use:   "centralsso",
