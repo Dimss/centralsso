@@ -42,6 +42,8 @@ func Run(addr, bgColor, t string) {
 
 	r.GET("/index.html", indexHandler)
 
+	r.GET("/central.html", centralHandler)
+
 	r.GET("/ready", readyHandler)
 
 	if err := r.Run(addr); err != nil {
@@ -49,8 +51,12 @@ func Run(addr, bgColor, t string) {
 	}
 }
 
+func centralHandler(c *gin.Context) {
+	c.Data(http.StatusOK, "text/html", ui.NewCentral(title, bg, c.Request.Header).Parse())
+}
+
 func indexHandler(c *gin.Context) {
-	c.Data(http.StatusOK, "text/html", ui.NewIndex(title, bg, c.Request.Header).Parse())
+	c.Data(http.StatusOK, "text/html", ui.NewIndex().Parse())
 }
 
 func readyHandler(c *gin.Context) {
