@@ -32,15 +32,15 @@ func Run(addr, bgColor, t string) {
 
 	r.StaticFS("/public", mustFS())
 
+	r.GET("/", indexHandler)
+
+	r.GET("/index.html", indexHandler)
+
 	r.GET("/api/:ping", apiHandler)
 
 	r.GET("/jwt", generateJWT)
 
 	r.GET("/websocket", webSocketHandler)
-
-	r.GET("/", defaultIndexRedirectHandler)
-
-	r.GET("/index.html", indexHandler)
 
 	r.GET("/central.html", centralHandler)
 
@@ -56,15 +56,11 @@ func centralHandler(c *gin.Context) {
 }
 
 func indexHandler(c *gin.Context) {
-	c.Data(http.StatusOK, "text/html", ui.NewIndex().Parse())
+	c.Redirect(http.StatusFound, viper.GetString("app-url"))
 }
 
 func readyHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
-}
-
-func defaultIndexRedirectHandler(c *gin.Context) {
-	c.Redirect(http.StatusFound, "/index.html")
 }
 
 func apiHandler(c *gin.Context) {
