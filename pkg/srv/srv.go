@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"github.com/AccessibleAI/centralsso/pkg/ui"
+	limit "github.com/aviddiviner/gin-limit"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/websocket"
@@ -12,6 +13,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -30,6 +32,8 @@ func Run(addr, bgColor, t string) {
 
 	r := gin.Default()
 
+	r.Use(limit.MaxAllowed(1))
+
 	r.StaticFS("/public", mustFS())
 
 	r.GET("/", indexHandler)
@@ -44,7 +48,7 @@ func Run(addr, bgColor, t string) {
 
 	r.GET("/central.html", centralHandler)
 
-	r.GET("/ready", readyHandler)
+	r.GET("/ready/:sleep", readyHandler)
 
 	if err := r.Run(addr); err != nil {
 		log.Fatal(err)
@@ -60,7 +64,9 @@ func indexHandler(c *gin.Context) {
 }
 
 func readyHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{})
+	sleep, _ := strconv.ParseInt(c.Param("sleep"), 10, 64)
+	time.Sleep(time.Duration(sleep) * time.Second)
+	c.JSON(http.StatusOK, gin.H{"sleep": sleep})
 }
 
 func apiHandler(c *gin.Context) {
