@@ -1,4 +1,4 @@
-module github.com/AccessibleAI/centralsso
+module github.com/Dimss/centralsso
 
 go 1.19
 
