@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/Dimss/centralsso/pkg/grpcsrv/pb";
+
+message PingRequest {
+  string message = 1;
+}
+
+message PingResponse {
+  string message = 1;
+}
+
+service PingService {
+  rpc Ping(PingRequest) returns (PingResponse);
+}

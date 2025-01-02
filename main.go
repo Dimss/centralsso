@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/AccessibleAI/centralsso/pkg/srv"
+	"github.com/Dimss/centralsso/pkg/grpcsrv"
+	"github.com/Dimss/centralsso/pkg/httpsrv"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -30,7 +31,7 @@ var (
 	rootParams = []param{
 		{name: "bind-addr", shorthand: "", value: "0.0.0.0:8080", usage: "listen address"},
 		{name: "bg-color", shorthand: "", value: "white", usage: "page background"},
-		{name: "title", shorthand: "", value: "Cnvrg SSO Central", usage: "page title"},
+		{name: "title", shorthand: "", value: "SSO Central", usage: "page title"},
 		{name: "sign-key", shorthand: "", value: "./config/private-key", usage: "path to private key for jwt sign"},
 		{name: "domain-id", shorthand: "", value: "localhost", usage: "the domain id which will be used as a group"},
 		{name: "jwt-iis", shorthand: "", value: "iis", usage: "the jwt iis"},
@@ -42,7 +43,10 @@ var (
 		Use:   "centralsso",
 		Short: "centralsso - cnvrg central sso test app ",
 		Run: func(cmd *cobra.Command, args []string) {
-			srv.Run(viper.GetString("bind-addr"), "white", "SSO Central")
+			// start http server
+			httpsrv.Run(viper.GetString("bind-addr"), "white", viper.GetString("title"))
+			// start grpc server
+			grpcsrv.NewServer().Run()
 			// handle interrupts
 			sigCh := make(chan os.Signal, 1)
 			signal.Notify(sigCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)

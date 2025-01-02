@@ -1,10 +1,10 @@
-package srv
+package httpsrv
 
 import (
 	"context"
 	"crypto/rsa"
 	"fmt"
-	"github.com/AccessibleAI/centralsso/pkg/ui"
+	"github.com/Dimss/centralsso/pkg/ui"
 	limit "github.com/aviddiviner/gin-limit"
 	"github.com/coreos/go-oidc"
 	"github.com/gin-gonic/gin"
@@ -28,38 +28,40 @@ var (
 )
 
 func Run(addr, bgColor, t string) {
+	go func() {
 
-	bg = bgColor
+		bg = bgColor
 
-	title = t
+		title = t
 
-	r := gin.Default()
+		r := gin.Default()
 
-	r.Use(limit.MaxAllowed(1))
+		r.Use(limit.MaxAllowed(1))
 
-	r.StaticFS("/public", mustFS())
+		r.StaticFS("/public", mustFS())
 
-	r.GET("/", indexHandler)
+		r.GET("/", indexHandler)
 
-	r.GET("/index.html", indexHandler)
+		r.GET("/index.html", indexHandler)
 
-	r.GET("/api/:ping", apiHandler)
+		r.GET("/api/:ping", apiHandler)
 
-	r.GET("/jwt", generateJWT)
+		r.GET("/jwt", generateJWT)
 
-	r.GET("/websocket", webSocketHandler)
+		r.GET("/websocket", webSocketHandler)
 
-	r.GET("/central.html", centralHandler)
+		r.GET("/central.html", centralHandler)
 
-	r.GET("/ready/:sleep", readyHandler)
+		r.GET("/ready/:sleep", readyHandler)
 
-	r.GET("/dex-login", dexLogin)
+		r.GET("/dex-login", dexLogin)
 
-	r.GET("/dex-callback", dexCallback)
+		r.GET("/dex-callback", dexCallback)
 
-	if err := r.Run(addr); err != nil {
-		log.Fatal(err)
-	}
+		if err := r.Run(addr); err != nil {
+			log.Fatal(err)
+		}
+	}()
 }
 
 func oidcSetup() (*oidc.IDTokenVerifier, oauth2.Config) {
