@@ -35,12 +35,14 @@ var (
 		{name: "domain-id", shorthand: "", value: "localhost", usage: "the domain id which will be used as a group"},
 		{name: "jwt-iis", shorthand: "", value: "iis", usage: "the jwt iis"},
 		{name: "app-url", shorthand: "", value: "app-url", usage: "App url for default redirect"},
+		{name: "dex-issuer-url", shorthand: "", value: "http://127.0.0.1:5556/dex", usage: "Dex issuer"},
+		{name: "dex-redirect-url", shorthand: "", value: "http://127.0.0.1:8080/dex-callback", usage: "Dex issuer"},
 	}
 	rootCmd = &cobra.Command{
 		Use:   "centralsso",
 		Short: "centralsso - cnvrg central sso test app ",
 		Run: func(cmd *cobra.Command, args []string) {
-			srv.Run(viper.GetString("bind-addr"), viper.GetString("bg-color"), viper.GetString("title"))
+			srv.Run(viper.GetString("bind-addr"), "white", "SSO Central")
 			// handle interrupts
 			sigCh := make(chan os.Signal, 1)
 			signal.Notify(sigCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
