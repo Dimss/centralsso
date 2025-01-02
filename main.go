@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"log/slog"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -41,14 +42,18 @@ var (
 	}
 	rootCmd = &cobra.Command{
 		Use:   "centralsso",
-		Short: "centralsso - cnvrg central sso test app ",
+		Short: "centralsso - central sso test app ",
 		Run: func(cmd *cobra.Command, args []string) {
 			// start http server
-			httpsrv.Run(viper.GetString("bind-addr"), "white", viper.GetString("title"))
+			httpsrv.Run(
+				viper.GetString("bind-addr"),
+				viper.GetString("bg-color"),
+				viper.GetString("title"))
 			// start grpc server
 			grpcsrv.NewServer().Run()
 			// handle interrupts
 			sigCh := make(chan os.Signal, 1)
+			slog.Info("all servers are running, waiting for interrupts...")
 			signal.Notify(sigCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 			for {
 				select {

@@ -24,16 +24,18 @@ func (s *Server) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingResponse
 }
 
 func (s *Server) Run() {
-	lis, err := net.Listen("tcp", ":5050")
-	if err != nil {
-		log.Fatal(err)
-	}
-	grpcServer := grpc.NewServer()
-	pb.RegisterPingServiceServer(grpcServer, s)
-	log.Info("grpc server listening on :5050")
-	reflection.Register(grpcServer)
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatal(err)
-	}
+	go func() {
+		lis, err := net.Listen("tcp", ":5050")
+		if err != nil {
+			log.Fatal(err)
+		}
+		grpcServer := grpc.NewServer()
+		pb.RegisterPingServiceServer(grpcServer, s)
+		log.Info("grpc server listening on :5050")
+		reflection.Register(grpcServer)
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 }
